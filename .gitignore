@@ -1,0 +1,11 @@
+# File bảo mật môi trường
+.env
+
+# Thư mục ảo Python & cache
+venv/
+env/
+__pycache__/
+*.pyc
+
+# File rác hệ điều hành
+.DS_Store
