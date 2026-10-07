@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Review Insights</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#1c2940;background:#f5f7fb}
+    *{box-sizing:border-box}body{margin:0}.wrap{max-width:1050px;margin:auto;padding:32px 20px 70px}
+    header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:26px}
+    h1{font-size:30px;margin:0}.muted{color:#65738a}.subtitle{margin:6px 0 0}
+    .badge{background:#e7f1ff;color:#1758a8;border-radius:100px;padding:8px 13px;font-size:13px;font-weight:700}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.card{background:white;border:1px solid #e4e9f2;border-radius:16px;padding:22px;box-shadow:0 5px 22px #283b5a0a}
+    .wide{grid-column:1/-1}h2{font-size:18px;margin:0 0 18px}label{display:block;font-weight:650;font-size:14px;margin:14px 0 7px}
+    select,textarea,input{width:100%;border:1px solid #cbd5e3;border-radius:9px;padding:11px 12px;background:white;color:#1c2940;font:inherit}
+    textarea{min-height:115px;resize:vertical}input[type=password]{max-width:330px}button{cursor:pointer;border:0;border-radius:9px;background:#2563eb;color:white;padding:12px 18px;font-weight:700;font:inherit}
+    button:disabled{opacity:.55;cursor:wait}.helper{font-size:13px;color:#65738a;margin:7px 0 0}
+    .message{min-height:22px;margin:14px 0 0;font-size:14px}.message.error{color:#b42318}.message.good{color:#087443}
+    .total{font-size:32px;font-weight:800;margin:0}.stat{margin:14px 0}.stat-line{display:flex;justify-content:space-between;font-size:14px;margin-bottom:5px}
+    .track{height:11px;border-radius:20px;background:#edf1f6;overflow:hidden}.fill{height:100%;border-radius:20px;transition:width .3s}
+    .positive{background:#15a871}.neutral{background:#8091a8}.negative{background:#ed6a65}.mixed{background:#e3a436}
+    .table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:680px}th,td{text-align:left;padding:12px 9px;border-bottom:1px solid #e8edf4;vertical-align:top;font-size:14px}
+    th{color:#65738a;font-size:12px;text-transform:uppercase;letter-spacing:.04em}.pill{display:inline-block;border-radius:20px;background:#edf2fb;padding:4px 8px;font-size:12px;white-space:nowrap}
+    .review{max-width:430px;line-height:1.45}.small{font-size:12px;color:#65738a;margin-top:4px}
+    @media(max-width:720px){.grid{grid-template-columns:1fr}.wide{grid-column:auto}header{align-items:flex-start;flex-direction:column}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header><div><h1>Review Insights</h1><p class="subtitle muted">Phân tích cảm xúc và khía cạnh trong đánh giá sản phẩm</p></div><span class="badge">AI · PostgreSQL</span></header>
+  <div class="grid">
+    <section class="card">
+      <h2>Phân tích đánh giá mới</h2>
+      <form id="review-form">
+        <label for="product">Sản phẩm</label><select id="product" required></select>
+        <label for="review">Nội dung đánh giá</label><textarea id="review" minlength="3" maxlength="2000" required placeholder="Ví dụ: Chất lượng tốt nhưng giao hàng hơi chậm..."></textarea>
+        <label for="rating">Số sao (không bắt buộc)</label><select id="rating"><option value="">Không chọn</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+        <label for="token">Mã truy cập demo (nếu được cấp)</label><input id="token" type="password" autocomplete="off" placeholder="Để trống khi chạy local">
+        <p class="helper">Kết quả sẽ được lưu vào PostgreSQL.</p>
+        <button id="submit" type="submit">Phân tích và lưu</button>
+        <p id="message" class="message" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+    <section class="card">
+      <h2>Tổng quan sản phẩm</h2><p class="total" id="total">—</p><p class="helper">đánh giá đã được AI phân tích</p>
+      <div id="stats"></div>
+    </section>
+    <section class="card wide">
+      <h2>Lịch sử đánh giá</h2>
+      <div class="table-wrap"><table><thead><tr><th>Đánh giá</th><th>Cảm xúc</th><th>Khía cạnh</th><th>Trạng thái</th></tr></thead><tbody id="reviews"><tr><td colspan="4">Đang tải...</td></tr></tbody></table></div>
+    </section>
+  </div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const labels = {positive:'Tích cực',neutral:'Trung lập',negative:'Tiêu cực',mixed:'Trái chiều'};
+
+async function api(url, options={}) {
+  const response = await fetch(url, options);
+  let body;
+  try { body = await response.json(); } catch { throw new Error('Máy chủ không trả về JSON hợp lệ'); }
+  if (!response.ok) {
+    const detail = body.detail;
+    throw new Error(typeof detail === 'string' ? detail : 'Yêu cầu không thành công');
+  }
+  return body;
+}
+
+function node(tag, value, className='') {
+  const el = document.createElement(tag);
+  el.textContent = value ?? '';
+  if (className) el.className = className;
+  return el;
+}
+
+async function refresh() {
+  const id = $('product').value;
+  if (!id) return;
+  const [summary, reviews] = await Promise.all([
+    api(`/api/products/${id}/summary`), api(`/api/products/${id}/reviews`)
+  ]);
+  $('total').textContent = summary.total_analyzed;
+  $('stats').replaceChildren();
+  for (const [key, count] of Object.entries(summary.sentiments)) {
+    const row = node('div', '', 'stat');
+    const line = node('div', '', 'stat-line');
+    line.append(node('span', labels[key]), node('strong', count));
+    const track = node('div', '', 'track');
+    const fill = node('div', '', `fill ${key}`);
+    fill.style.width = `${summary.total_analyzed ? 100*count/summary.total_analyzed : 0}%`;
+    track.append(fill);row.append(line, track);$('stats').append(row);
+  }
+  $('reviews').replaceChildren();
+  if (!reviews.length) {
+    const tr = node('tr');const td = node('td','Chưa có đánh giá. Hãy nhập đánh giá đầu tiên.');td.colSpan=4;tr.append(td);$('reviews').append(tr);return;
+  }
+  for (const review of reviews) {
+    const tr = node('tr');
+    const detail = node('td', '', 'review');
+    detail.append(node('div',review.review_text),node('div',review.reason || (review.rating ? `${review.rating} sao` : ''),'small'));
+    tr.append(detail,node('td',labels[review.sentiment] || '—','pill'),node('td',(review.aspects || []).join(', ') || '—'),node('td',review.status));
+    $('reviews').append(tr);
+  }
+}
+
+async function boot() {
+  try {
+    const products = await api('/api/products');
+    $('product').replaceChildren();
+    for (const item of products) {
+      const option = node('option', item.name);option.value = item.id;$('product').append(option);
+    }
+    if (!products.length) {
+      $('message').textContent='Chưa có sản phẩm. Hãy chạy lệnh nạp dữ liệu mẫu trong README.';
+      $('submit').disabled=true;return;
+    }
+    await refresh();
+  } catch(err) {$('message').textContent=err.message;$('message').className='message error';}
+}
+
+$('product').addEventListener('change',()=>refresh().catch(err=>{ $('message').textContent=err.message; }));
+$('review-form').addEventListener('submit', async event => {
+  event.preventDefault();$('submit').disabled=true;$('message').className='message';$('message').textContent='Đang gọi AI...';
+  try {
+    const result = await api('/api/reviews/analyze',{
+      method:'POST',headers:{'Content-Type':'application/json','X-Demo-Token':$('token').value},
+      body:JSON.stringify({product_id:Number($('product').value),review_text:$('review').value,rating:$('rating').value ? Number($('rating').value) : null})
+    });
+    $('message').textContent=`Đã lưu: ${labels[result.sentiment]} · ${result.aspects.join(', ')}`;
+    $('message').className='message good';$('review').value='';await refresh();
+  } catch(err) {$('message').textContent=err.message;$('message').className='message error';await refresh().catch(()=>{});}
+  finally {$('submit').disabled=false;}
+});
+boot();
+</script>
+</body>
+</html>
