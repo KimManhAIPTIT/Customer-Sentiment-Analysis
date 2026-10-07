@@ -1,13 +1,19 @@
 """Ứng dụng FastAPI: giao diện, API và luồng lưu kết quả."""
 
+import os
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
+from ai_service import AIServiceError, analyze_review
 from database import Product, Review, get_db, init_db
+
 
 
 @asynccontextmanager
@@ -17,6 +23,7 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(title="Review Insights", lifespan=lifespan)
+templates = Jinja2Templates(directory="templates")
 
 
 class ReviewInput(BaseModel):
@@ -40,9 +47,9 @@ def review_dict(review: Review) -> dict:
     }
 
 
-@app.get("/")
-def home():
-    return {"status": "backend_ready"}
+@app.get("/", response_class=HTMLResponse)
+def home(request: Request):
+    return templates.TemplateResponse(request=request, name="index.html")
 
 
 @app.get("/health")
@@ -89,8 +96,20 @@ def summary(product_id: int, db: Session = Depends(get_db)):
     return {"product_id": product_id, "total_analyzed": sum(counts.values()), "sentiments": counts}
 
 
-@app.post("/api/reviews/analyze", status_code=202)
-def create_review(payload: ReviewInput, db: Session = Depends(get_db)):
+@app.post("/api/reviews/analyze", status_code=201)
+def create_review(
+    payload: ReviewInput,
+    x_demo_token: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    configured_token = os.getenv("DEMO_ACCESS_TOKEN", "").strip()
+    if (
+        configured_token
+        and configured_token != "YOUR_PRIVATE_DEMO_TOKEN"
+        and x_demo_token != configured_token
+    ):
+        raise HTTPException(status_code=403, detail="Mã truy cập demo không đúng")
+
     if not payload.review_text.strip():
         raise HTTPException(status_code=422, detail="Đánh giá không được để trống")
     if not db.get(Product, payload.product_id):
@@ -104,6 +123,21 @@ def create_review(payload: ReviewInput, db: Session = Depends(get_db)):
         status="pending",
     )
     db.add(review)
+    db.commit()
+    db.refresh(review)
+
+    try:
+        result = analyze_review(review.review_text)
+    except AIServiceError as exc:
+        review.status = "failed"
+        db.commit()
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    review.sentiment = result.sentiment
+    review.aspects = result.aspects
+    review.reason = result.reason
+    review.status = "analyzed"
+    review.analyzed_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(review)
     return review_dict(review)
