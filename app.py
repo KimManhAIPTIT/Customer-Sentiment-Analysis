@@ -10,6 +10,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from ai_service import AIServiceError, analyze_review
 from database import Product, Review, get_db, init_db
@@ -30,6 +31,9 @@ class ReviewInput(BaseModel):
     product_id: int = Field(gt=0)
     review_text: str = Field(min_length=3, max_length=2000)
     rating: int | None = Field(default=None, ge=1, le=5)
+
+class ProductInput(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
 
 
 def review_dict(review: Review) -> dict:
@@ -66,6 +70,36 @@ def products(db: Session = Depends(get_db)):
     rows = db.scalars(select(Product).order_by(Product.id)).all()
     return [{"id": row.id, "name": row.name} for row in rows]
 
+@app.post("/api/products", status_code=201)
+def create_product(
+    payload: ProductInput,
+    x_demo_token: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    configured_token = os.getenv("DEMO_ACCESS_TOKEN", "").strip()
+    if (
+        configured_token
+        and configured_token != "YOUR_PRIVATE_DEMO_TOKEN"
+        and x_demo_token != configured_token
+    ):
+        raise HTTPException(status_code=403, detail="Mã truy cập demo không đúng")
+
+    name = payload.name.strip()
+    if not name:
+        raise HTTPException(status_code=422, detail="Tên sản phẩm không được để trống")
+    if db.scalar(select(Product.id).where(func.lower(Product.name) == name.lower())):
+        raise HTTPException(status_code=409, detail="Sản phẩm đã tồn tại")
+
+    product = Product(name=name)
+    db.add(product)
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Sản phẩm đã tồn tại") from exc
+    db.refresh(product)
+    return {"id": product.id, "name": product.name}
+
 
 @app.get("/api/products/{product_id}/reviews")
 def reviews(product_id: int, db: Session = Depends(get_db)):
@@ -78,6 +112,7 @@ def reviews(product_id: int, db: Session = Depends(get_db)):
         .limit(100)
     ).all()
     return [review_dict(row) for row in rows]
+
 
 
 @app.get("/api/products/{product_id}/summary")

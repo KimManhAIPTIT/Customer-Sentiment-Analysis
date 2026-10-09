@@ -114,6 +114,26 @@ def test_demo_access_token(client, monkeypatch):
     assert response.status_code == 403
     assert client.get("/api/products/1/reviews").json() == []
 
+def test_create_product_and_reject_duplicates(client):
+    response = client.post("/api/products", json={"name": "  Bàn phím cơ  "})
+    assert response.status_code == 201
+    product = response.json()
+    assert product["name"] == "Bàn phím cơ"
+    assert product in client.get("/api/products").json()
+    assert client.get(f"/api/products/{product['id']}/reviews").json() == []
+    assert client.post("/api/products", json={"name": "bàn phím cơ"}).status_code == 409
+    assert client.post("/api/products", json={"name": "   "}).status_code == 422
+
+
+def test_create_product_requires_demo_token_when_configured(client, monkeypatch):
+    monkeypatch.setenv("DEMO_ACCESS_TOKEN", "private-demo-value")
+    payload = {"name": "Chuột không dây"}
+    assert client.post("/api/products", json=payload).status_code == 403
+    response = client.post(
+        "/api/products", json=payload, headers={"X-Demo-Token": "private-demo-value"}
+    )
+    assert response.status_code == 201
+
 
 def test_seed_is_idempotent(client):
     csv_path = Path(__file__).resolve().parents[1] / "data" / "sample_reviews.csv"

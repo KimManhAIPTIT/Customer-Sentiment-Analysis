@@ -5,23 +5,78 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Review Insights</title>
   <style>
-    :root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#1c2940;background:#f5f7fb}
-    *{box-sizing:border-box}body{margin:0}.wrap{max-width:1050px;margin:auto;padding:32px 20px 70px}
-    header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:26px}
-    h1{font-size:30px;margin:0}.muted{color:#65738a}.subtitle{margin:6px 0 0}
-    .badge{background:#e7f1ff;color:#1758a8;border-radius:100px;padding:8px 13px;font-size:13px;font-weight:700}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.card{background:white;border:1px solid #e4e9f2;border-radius:16px;padding:22px;box-shadow:0 5px 22px #283b5a0a}
-    .wide{grid-column:1/-1}h2{font-size:18px;margin:0 0 18px}label{display:block;font-weight:650;font-size:14px;margin:14px 0 7px}
-    select,textarea,input{width:100%;border:1px solid #cbd5e3;border-radius:9px;padding:11px 12px;background:white;color:#1c2940;font:inherit}
-    textarea{min-height:115px;resize:vertical}input[type=password]{max-width:330px}button{cursor:pointer;border:0;border-radius:9px;background:#2563eb;color:white;padding:12px 18px;font-weight:700;font:inherit}
-    button:disabled{opacity:.55;cursor:wait}.helper{font-size:13px;color:#65738a;margin:7px 0 0}
-    .message{min-height:22px;margin:14px 0 0;font-size:14px}.message.error{color:#b42318}.message.good{color:#087443}
-    .total{font-size:32px;font-weight:800;margin:0}.stat{margin:14px 0}.stat-line{display:flex;justify-content:space-between;font-size:14px;margin-bottom:5px}
-    .track{height:11px;border-radius:20px;background:#edf1f6;overflow:hidden}.fill{height:100%;border-radius:20px;transition:width .3s}
-    .positive{background:#15a871}.neutral{background:#8091a8}.negative{background:#ed6a65}.mixed{background:#e3a436}
-    .table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:680px}th,td{text-align:left;padding:12px 9px;border-bottom:1px solid #e8edf4;vertical-align:top;font-size:14px}
-    th{color:#65738a;font-size:12px;text-transform:uppercase;letter-spacing:.04em}.pill{display:inline-block;border-radius:20px;background:#edf2fb;padding:4px 8px;font-size:12px;white-space:nowrap}
-    .review{max-width:430px;line-height:1.45}.small{font-size:12px;color:#65738a;margin-top:4px}
+    :root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#172b4d;background:#f3f6fb}
+    *{box-sizing:border-box}body{margin:0}.wrap{max-width:1190px;margin:auto;padding:28px 24px 56px}
+    body{background:radial-gradient(circle at 6% 3%,#e3ecff 0,transparent 31%),radial-gradient(circle at 96% 28%,#e9e8fb 0,transparent 28%),#f3f6fb}
+    header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:22px}
+    h1{font-size:29px;letter-spacing:-.02em;margin:0}.muted{color:#61728c}.subtitle{margin:5px 0 0}
+    .badge{background:linear-gradient(120deg,#e5edfc,#ece8ff);color:#1e4d9e;border-radius:100px;padding:8px 13px;font-size:13px;font-weight:700}
+    .grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:16px;align-items:stretch}
+    .card{background:white;border:1px solid #dbe4f1;border-radius:16px;padding:21px;box-shadow:0 10px 28px #243b6210}
+    .review-card{border-top:4px solid #2563eb}.summary-card{border-top:4px solid #7757cb;display:flex;flex-direction:column}
+    .history-card{border-top:4px solid #2c87a5}
+    .wide{grid-column:1/-1}h2{font-size:18px;margin:0 0 14px}label{display:block;font-weight:650;font-size:14px;margin:12px 0 6px}
+    select,textarea,input{width:100%;border:1px solid #c9d5e6;border-radius:9px;padding:10px 12px;background:white;color:#172b4d;font:inherit}
+    select:focus-visible,textarea:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
+    textarea{min-height:100px;resize:vertical}input[type=password]{max-width:330px}
+    .rating-field{border:0;padding:0;margin:12px 0 8px;min-width:0}.rating-field legend{font-size:14px;font-weight:650;margin-bottom:8px}
+    .rating-picker{display:flex;align-items:center;gap:4px;flex-wrap:wrap}.star-choice{position:relative;display:inline-flex;margin:0;cursor:pointer}
+    .star-choice input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+    .star-choice span{font-size:32px;line-height:1;color:#c9d2df;transition:color .15s,transform .15s}
+    .star-choice:hover span{transform:translateY(-2px)}.star-choice.active span{color:#efa91a}
+    .star-choice:focus-within{outline:2px solid #2563eb;outline-offset:3px;border-radius:4px}
+    .clear-rating{font-size:12px;padding:6px 10px;margin-left:8px}.rating-readout{font-size:13px;color:#61728c;margin-left:7px}
+    button{cursor:pointer;border:0;border-radius:9px;background:#2563eb;color:white;padding:10px 16px;font-weight:700;font:inherit}
+    button:hover:not(:disabled){background:#1d4fbd}.secondary{background:#e8effc;color:#164c9c}.secondary:hover:not(:disabled){background:#dbe7fb}
+    button:disabled{opacity:.55;cursor:wait}.helper{font-size:13px;color:#61728c;margin:6px 0 0}
+    .message{min-height:20px;margin:9px 0 0;font-size:14px}.message.error{color:#b42318}.message.good{color:#087443}
+    .product-picker{display:flex;align-items:end;gap:8px}.product-picker .product-select{flex:1;min-width:0}
+    .product-picker button{white-space:nowrap}.product-panel{margin:9px 0 5px;padding:12px;background:#f5f8fd;border:1px solid #e1e9f5;border-radius:10px}
+    .product-panel label{margin-top:0}.product-panel .message:empty{display:none}
+    .summary-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}
+    .summary-head h2{margin:0}.summary-count{text-align:right}.total{font-size:34px;font-weight:800;line-height:1;margin:0;color:#1d4fbd}
+    .summary-count .helper{max-width:170px}.stats-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:10px;flex:1}
+    .stat{border:1px solid #e4eaf3;border-radius:12px;padding:13px;min-height:105px}
+    .stat-line{display:flex;justify-content:space-between;gap:6px;font-size:13px;color:#50627e}
+    .stat strong{display:block;font-size:25px;margin-top:8px}.stat .helper{font-size:12px;margin-top:1px}
+    .stat-positive{border-left:4px solid #109567;background:#f1fbf6}.stat-neutral{border-left:4px solid #7086a3;background:#f3f6fb}
+    .stat-negative{border-left:4px solid #d85857;background:#fff5f4}.stat-mixed{border-left:4px solid #c98a26;background:#fff9ec}
+    .distribution-label{margin:16px 0 7px;font-size:13px;font-weight:650;color:#50627e}
+    .distribution{display:flex;overflow:hidden;height:12px;background:#e9eef6;border-radius:12px}
+    .distribution>span{height:100%;transition:width .3s}.positive{background:#109567}.neutral{background:#7086a3}
+    .negative{background:#d85857}.mixed{background:#c98a26}
+    .summary-footer{margin-top:auto;padding-top:20px}.insight{margin-top:18px;border:1px solid #dfd9f3;border-radius:12px;padding:13px 15px;background:linear-gradient(120deg,#f4f0ff,#f8faff)}
+    .insight-label{font-size:12px;font-weight:750;text-transform:uppercase;letter-spacing:.05em;color:#6650a9}
+    .insight-text{font-size:14px;line-height:1.5;margin:5px 0 0;color:#304465}
+    .table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:850px}th,td{text-align:left;padding:12px 9px;border-bottom:1px solid #e8edf4;vertical-align:top;font-size:14px}
+    th{color:#61728c;font-size:12px;text-transform:uppercase;letter-spacing:.04em}tbody tr:hover{background:#f7f9fd}
+    .review{min-width:210px;max-width:390px;line-height:1.45}.time{white-space:nowrap;color:#65738a}
+    .stars{display:inline-flex;gap:2px;white-space:nowrap;font-size:19px;line-height:1;color:#d0d7e2}
+    .stars .filled{color:#f4b400}.no-rating{color:#65738a;font-size:12px;white-space:nowrap}
+    .status{display:inline-block;padding:5px 9px;border-radius:100px;font-size:12px;font-weight:700;white-space:nowrap}
+    .status-analyzed{background:#e5f7ee;color:#087443}.status-pending{background:#fff3d8;color:#8b5a00}
+    .status-failed{background:#fff0ed;color:#b42318}
+    .sentiment{display:inline-block;padding:5px 9px;border-radius:100px;font-size:12px;font-weight:700;white-space:nowrap}
+    .sentiment-positive{background:#e5f7ee;color:#087443}.sentiment-neutral{background:#edf1f6;color:#4d6179}
+    .sentiment-negative{background:#fff0ed;color:#b42318}.sentiment-mixed{background:#fff3d8;color:#8b5a00}
+    .result-card{border-left:5px solid #2563eb;background:linear-gradient(120deg,#f7faff,#fff 56%)}
+    .result-card[data-state="success"]{border-left-color:#15a871}
+    .result-card[data-state="error"]{border-left-color:#ed6a65}
+    .result-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+    .result-field{margin:0;border:1px solid #dfe8f4;border-radius:12px;background:#fff;padding:16px;min-height:98px}
+    .result-field dt{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:#61728c;margin-bottom:10px}
+    .result-field dd{margin:0;line-height:1.55}.result-field .sentiment{font-size:14px;padding:7px 12px}
+    .result-aspects{display:flex;flex-wrap:wrap;gap:7px}.aspect-chip{display:inline-block;background:#e8efff;color:#2350a0;border:1px solid #cddcf9;border-radius:100px;padding:5px 10px;font-size:13px;font-weight:650}
+    .result-reason{grid-column:1/-1;background:#f5f4fc;border-color:#e4dff4;min-height:0}
+    .result-card[data-sentiment="positive"]{border-left-color:#109567}.result-card[data-sentiment="negative"]{border-left-color:#d85857}
+    .result-card[data-sentiment="mixed"]{border-left-color:#c98a26}.result-card[data-sentiment="neutral"]{border-left-color:#7086a3}
+    .add-product-row{display:flex;gap:8px}.add-product-row input{flex:1;min-width:0}.add-product-row button{white-space:nowrap}
+    .history-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+    .history-top h2{margin:0}.history-filters{display:flex;gap:10px;flex-wrap:wrap}
+    .history-filters label{margin:0;min-width:145px;font-size:12px;color:#61728c}.history-filters select{margin-top:4px;padding:8px 10px}
+    [hidden]{display:none!important}
+    @media(max-width:540px){.wrap{padding:22px 14px 40px}.result-grid{grid-template-columns:1fr}.result-reason{grid-column:auto}.add-product-row,.product-picker{flex-direction:column;align-items:stretch}.summary-head{align-items:start}.history-filters{width:100%}.history-filters label{flex:1;min-width:125px}}
     @media(max-width:720px){.grid{grid-template-columns:1fr}.wide{grid-column:auto}header{align-items:flex-start;flex-direction:column}}
   </style>
 </head>
@@ -29,31 +84,115 @@
 <div class="wrap">
   <header><div><h1>Review Insights</h1><p class="subtitle muted">Phân tích cảm xúc và khía cạnh trong đánh giá sản phẩm</p></div><span class="badge">AI · PostgreSQL</span></header>
   <div class="grid">
-    <section class="card">
+    <section class="card review-card">
       <h2>Phân tích đánh giá mới</h2>
+      <div class="product-picker">
+        <div class="product-select"><label for="product">Sản phẩm</label><select id="product" form="review-form" required></select></div>
+        <button id="toggle-product" class="secondary" type="button" aria-expanded="false" aria-controls="product-panel">+ Thêm sản phẩm</button>
+      </div>
+      <div id="product-panel" class="product-panel" hidden>
+        <form id="product-form">
+          <label for="new-product">Tên sản phẩm mới</label>
+          <div class="add-product-row"><input id="new-product" maxlength="120" required placeholder="Ví dụ: Bàn phím cơ"><button id="add-product" type="submit">Lưu</button></div>
+          <p id="product-message" class="message" role="status" aria-live="polite"></p>
+        </form>
+      </div>
       <form id="review-form">
-        <label for="product">Sản phẩm</label><select id="product" required></select>
         <label for="review">Nội dung đánh giá</label><textarea id="review" minlength="3" maxlength="2000" required placeholder="Ví dụ: Chất lượng tốt nhưng giao hàng hơi chậm..."></textarea>
-        <label for="rating">Số sao (không bắt buộc)</label><select id="rating"><option value="">Không chọn</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+        <fieldset class="rating-field"><legend>Số sao (không bắt buộc)</legend>
+          <div class="rating-picker" id="rating-picker">
+            <label class="star-choice"><input type="radio" name="rating" value="1" aria-label="1 sao"><span aria-hidden="true">★</span></label>
+            <label class="star-choice"><input type="radio" name="rating" value="2" aria-label="2 sao"><span aria-hidden="true">★</span></label>
+            <label class="star-choice"><input type="radio" name="rating" value="3" aria-label="3 sao"><span aria-hidden="true">★</span></label>
+            <label class="star-choice"><input type="radio" name="rating" value="4" aria-label="4 sao"><span aria-hidden="true">★</span></label>
+            <label class="star-choice"><input type="radio" name="rating" value="5" aria-label="5 sao"><span aria-hidden="true">★</span></label>
+            <button id="clear-rating" class="secondary clear-rating" type="button">Bỏ chọn</button>
+            <span id="rating-readout" class="rating-readout" aria-live="polite">Chưa chấm sao</span>
+          </div>
+        </fieldset>
         <label for="token">Mã truy cập demo (nếu được cấp)</label><input id="token" type="password" autocomplete="off" placeholder="Để trống khi chạy local">
         <p class="helper">Kết quả sẽ được lưu vào PostgreSQL.</p>
         <button id="submit" type="submit">Phân tích và lưu</button>
         <p id="message" class="message" role="status" aria-live="polite"></p>
       </form>
     </section>
-    <section class="card">
-      <h2>Tổng quan sản phẩm</h2><p class="total" id="total">—</p><p class="helper">đánh giá đã được AI phân tích</p>
-      <div id="stats"></div>
+    <section class="card summary-card">
+      <div class="summary-head"><h2>Tổng quan sản phẩm</h2><div class="summary-count"><p class="total" id="total">—</p><p class="helper">đánh giá đã phân tích</p></div></div>
+      <div id="stats" class="stats-grid"></div>
+      <div class="summary-footer">
+        <p class="distribution-label">Phân bố cảm xúc</p><div id="distribution" class="distribution" aria-label="Phân bố cảm xúc"></div>
+        <div class="insight"><span class="insight-label">Điểm nổi bật</span><p id="insight-text" class="insight-text">Đang tải dữ liệu...</p></div>
+      </div>
     </section>
-    <section class="card wide">
-      <h2>Lịch sử đánh giá</h2>
-      <div class="table-wrap"><table><thead><tr><th>Đánh giá</th><th>Cảm xúc</th><th>Khía cạnh</th><th>Trạng thái</th></tr></thead><tbody id="reviews"><tr><td colspan="4">Đang tải...</td></tr></tbody></table></div>
+    <section class="card wide result-card" id="result-card" data-state="loading" aria-live="polite" hidden>
+      <div class="result-top">
+        <h2 id="result-title" style="margin:0">Kết quả vừa phân tích</h2>
+        <span class="status status-pending" id="result-status">Đang phân tích</span>
+      </div>
+      <p id="result-message" class="helper"></p>
+      <dl class="result-grid" id="result-details" hidden>
+        <div class="result-field"><dt>Cảm xúc</dt><dd id="result-sentiment"></dd></div>
+        <div class="result-field"><dt>Khía cạnh được nhắc đến</dt><dd id="result-aspects" class="result-aspects"></dd></div>
+        <div class="result-field result-reason"><dt>Giải thích của AI</dt><dd id="result-reason"></dd></div>
+      </dl>
+    </section>
+    <section class="card wide history-card">
+      <div class="history-top"><h2>Lịch sử đánh giá</h2><div class="history-filters">
+        <label for="sentiment-filter">Cảm xúc
+          <select id="sentiment-filter"><option value="">Tất cả</option><option value="positive">Tích cực</option><option value="neutral">Trung lập</option><option value="negative">Tiêu cực</option><option value="mixed">Trái chiều</option></select>
+        </label>
+        <label for="status-filter">Trạng thái
+          <select id="status-filter"><option value="">Tất cả</option><option value="analyzed">Đã phân tích</option><option value="pending">Chờ phân tích</option><option value="failed">Phân tích lỗi</option></select>
+        </label>
+      </div></div>
+      <div class="table-wrap"><table><thead><tr><th>Đánh giá</th><th>Số sao</th><th>Thời gian</th><th>Cảm xúc</th><th>Khía cạnh</th><th>Trạng thái</th></tr></thead><tbody id="reviews"><tr><td colspan="6">Đang tải...</td></tr></tbody></table></div>
     </section>
   </div>
 </div>
 <script>
 const $ = id => document.getElementById(id);
 const labels = {positive:'Tích cực',neutral:'Trung lập',negative:'Tiêu cực',mixed:'Trái chiều'};
+const statusLabels = {pending:'Chờ phân tích',analyzed:'Đã phân tích',failed:'Phân tích lỗi'};
+const validSentiments = new Set(Object.keys(labels));
+const validStatuses = new Set(Object.keys(statusLabels));
+let currentReviews = [];
+
+function formatTime(value) {
+  if (!value) return 'Chưa rõ thời gian';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? 'Chưa rõ thời gian'
+    : new Intl.DateTimeFormat('vi-VN', {dateStyle:'short',timeStyle:'short'}).format(date);
+}
+
+function showResult(state, resultOrMessage='') {
+  $('result-card').hidden = false;
+  $('result-card').dataset.state = state;
+  if (state === 'success' && validSentiments.has(resultOrMessage.sentiment)) {
+    $('result-card').dataset.sentiment = resultOrMessage.sentiment;
+  } else {
+    delete $('result-card').dataset.sentiment;
+  }
+  $('result-details').hidden = state !== 'success';
+  const status = $('result-status');
+  status.className = 'status ' + (state === 'success' ? 'status-analyzed' : state === 'error' ? 'status-failed' : 'status-pending');
+  status.textContent = state === 'success' ? 'Đã phân tích' : state === 'error' ? 'Phân tích lỗi' : 'Đang phân tích';
+  $('result-message').textContent = state === 'loading'
+    ? 'Đang gửi đánh giá tới AI, vui lòng chờ...'
+    : state === 'error' ? resultOrMessage : 'Kết quả đã được lưu vào lịch sử đánh giá.';
+  if (state !== 'success') return;
+  const sentiment = $('result-sentiment');
+  sentiment.replaceChildren(node('span', labels[resultOrMessage.sentiment] || 'Chưa xác định',
+    'sentiment ' + (validSentiments.has(resultOrMessage.sentiment) ? 'sentiment-' + resultOrMessage.sentiment : '')));
+  $('result-aspects').replaceChildren();
+  const aspects = Array.isArray(resultOrMessage.aspects) ? resultOrMessage.aspects : [];
+  if (aspects.length) {
+    for (const aspect of aspects) $('result-aspects').append(node('span', aspect, 'aspect-chip'));
+  } else {
+    $('result-aspects').textContent = 'Chưa có';
+  }
+  $('result-reason').textContent = resultOrMessage.reason || 'Chưa có giải thích.';
+}
 
 async function api(url, options={}) {
   const response = await fetch(url, options);
@@ -73,6 +212,83 @@ function node(tag, value, className='') {
   return el;
 }
 
+function ratingNode(rating) {
+  if (rating == null || !Number.isInteger(Number(rating)) || Number(rating) < 1 || Number(rating) > 5) {
+    return node('span', 'Chưa chấm sao', 'no-rating');
+  }
+  const stars = node('span', '', 'stars');
+  stars.setAttribute('role', 'img');
+  stars.setAttribute('aria-label', `${rating} trên 5 sao`);
+  for (let i = 1; i <= 5; i++) {
+    const star = node('span', '★', i <= Number(rating) ? 'filled' : '');
+    star.setAttribute('aria-hidden', 'true');
+    stars.append(star);
+  }
+  return stars;
+}
+
+function updateRatingDisplay() {
+  const selected = document.querySelector('input[name="rating"]:checked');
+  const value = selected ? Number(selected.value) : 0;
+  document.querySelectorAll('.star-choice').forEach((label, index) => {
+    label.classList.toggle('active', index < value);
+  });
+  $('rating-readout').textContent = value ? `${value}/5 sao` : 'Chưa chấm sao';
+}
+
+function setProductPanel(open) {
+  $('product-panel').hidden = !open;
+  $('toggle-product').setAttribute('aria-expanded', String(open));
+  if (open) $('new-product').focus();
+}
+
+async function loadProducts(selectedId = null) {
+  const products = await api('/api/products');
+  const previousId = $('product').value;
+  $('product').replaceChildren();
+  for (const item of products) {
+    const option = node('option', item.name);
+    option.value = item.id;
+    $('product').append(option);
+  }
+  if (selectedId !== null) $('product').value = String(selectedId);
+  else if (products.some(item => String(item.id) === previousId)) $('product').value = previousId;
+  $('submit').disabled = products.length === 0;
+  return products;
+}
+
+function renderReviews() {
+  const sentimentFilter = $('sentiment-filter').value;
+  const statusFilter = $('status-filter').value;
+  const filtered = currentReviews.filter(review =>
+    (!sentimentFilter || review.sentiment === sentimentFilter) &&
+    (!statusFilter || review.status === statusFilter)
+  );
+  $('reviews').replaceChildren();
+  if (!filtered.length) {
+    const tr = node('tr');
+    const td = node('td', currentReviews.length ? 'Không có đánh giá phù hợp.' : 'Chưa có đánh giá. Hãy nhập đánh giá đầu tiên.');
+    td.colSpan = 6;
+    tr.append(td);
+    $('reviews').append(tr);
+    return;
+  }
+  for (const review of filtered) {
+    const tr = node('tr');
+    const detail = node('td', review.review_text, 'review');
+    const rating = node('td');
+    rating.append(ratingNode(review.rating));
+    const sentiment = node('td');
+    sentiment.append(node('span', labels[review.sentiment] || '—',
+      'sentiment ' + (validSentiments.has(review.sentiment) ? 'sentiment-' + review.sentiment : '')));
+    const status = node('td');
+    status.append(node('span', statusLabels[review.status] || 'Không rõ trạng thái',
+      'status ' + (validStatuses.has(review.status) ? 'status-' + review.status : '')));
+    tr.append(detail,rating,node('td',formatTime(review.created_at),'time'),sentiment,node('td',(review.aspects || []).join(', ') || '—'),status);
+    $('reviews').append(tr);
+  }
+}
+
 async function refresh() {
   const id = $('product').value;
   if (!id) return;
@@ -81,35 +297,35 @@ async function refresh() {
   ]);
   $('total').textContent = summary.total_analyzed;
   $('stats').replaceChildren();
-  for (const [key, count] of Object.entries(summary.sentiments)) {
-    const row = node('div', '', 'stat');
+  $('distribution').replaceChildren();
+  const total = summary.total_analyzed;
+  for (const key of Object.keys(labels)) {
+    const count = summary.sentiments[key] || 0;
+    const percent = total ? Math.round(100 * count / total) : 0;
+    const stat = node('div', '', `stat stat-${key}`);
     const line = node('div', '', 'stat-line');
-    line.append(node('span', labels[key]), node('strong', count));
-    const track = node('div', '', 'track');
-    const fill = node('div', '', `fill ${key}`);
-    fill.style.width = `${summary.total_analyzed ? 100*count/summary.total_analyzed : 0}%`;
-    track.append(fill);row.append(line, track);$('stats').append(row);
+    line.append(node('span', labels[key]), node('span', `${percent}%`));
+    stat.append(line, node('strong', count), node('p', 'đánh giá', 'helper'));
+    $('stats').append(stat);
+    const segment = node('span', '', key);
+    segment.style.width = `${total ? 100 * count / total : 0}%`;
+    segment.title = `${labels[key]}: ${count}`;
+    $('distribution').append(segment);
   }
-  $('reviews').replaceChildren();
-  if (!reviews.length) {
-    const tr = node('tr');const td = node('td','Chưa có đánh giá. Hãy nhập đánh giá đầu tiên.');td.colSpan=4;tr.append(td);$('reviews').append(tr);return;
+  if (total) {
+    const [topKey, topCount] = Object.entries(summary.sentiments)
+      .reduce((best, entry) => entry[1] > best[1] ? entry : best);
+    $('insight-text').textContent = `Cảm xúc ${labels[topKey].toLowerCase()} xuất hiện nhiều nhất: ${topCount}/${total} đánh giá.`;
+  } else {
+    $('insight-text').textContent = 'Chưa có đánh giá được phân tích cho sản phẩm này.';
   }
-  for (const review of reviews) {
-    const tr = node('tr');
-    const detail = node('td', '', 'review');
-    detail.append(node('div',review.review_text),node('div',review.reason || (review.rating ? `${review.rating} sao` : ''),'small'));
-    tr.append(detail,node('td',labels[review.sentiment] || '—','pill'),node('td',(review.aspects || []).join(', ') || '—'),node('td',review.status));
-    $('reviews').append(tr);
-  }
+  currentReviews = reviews;
+  renderReviews();
 }
 
 async function boot() {
   try {
-    const products = await api('/api/products');
-    $('product').replaceChildren();
-    for (const item of products) {
-      const option = node('option', item.name);option.value = item.id;$('product').append(option);
-    }
+    const products = await loadProducts();
     if (!products.length) {
       $('message').textContent='Chưa có sản phẩm. Hãy chạy lệnh nạp dữ liệu mẫu trong README.';
       $('submit').disabled=true;return;
@@ -118,17 +334,59 @@ async function boot() {
   } catch(err) {$('message').textContent=err.message;$('message').className='message error';}
 }
 
-$('product').addEventListener('change',()=>refresh().catch(err=>{ $('message').textContent=err.message; }));
-$('review-form').addEventListener('submit', async event => {
-  event.preventDefault();$('submit').disabled=true;$('message').className='message';$('message').textContent='Đang gọi AI...';
+$('product').addEventListener('change',()=>{
+  $('result-card').hidden=true;
+  refresh().catch(err=>{ $('message').textContent=err.message; $('message').className='message error'; });
+});
+$('toggle-product').addEventListener('click', () => setProductPanel($('product-panel').hidden));
+document.querySelectorAll('input[name="rating"]').forEach(input => input.addEventListener('change', updateRatingDisplay));
+$('clear-rating').addEventListener('click', () => {
+  const selected = document.querySelector('input[name="rating"]:checked');
+  if (selected) selected.checked = false;
+  updateRatingDisplay();
+});
+$('sentiment-filter').addEventListener('change', renderReviews);
+$('status-filter').addEventListener('change', renderReviews);
+$('product-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  $('add-product').disabled = true;
+  $('product-message').textContent = '';
+  $('product-message').className = 'message';
   try {
+    const product = await api('/api/products', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Demo-Token':$('token').value},
+      body:JSON.stringify({name:$('new-product').value})
+    });
+    await loadProducts(product.id);
+    $('new-product').value = '';
+    $('product-message').textContent = `Đã thêm sản phẩm: ${product.name}`;
+    $('product-message').className = 'message good';
+    setProductPanel(false);
+    $('message').textContent = `Đã thêm sản phẩm: ${product.name}`;
+    $('message').className = 'message good';
+    $('result-card').hidden = true;
+    await refresh();
+  } catch(err) {
+    $('product-message').textContent = err.message;
+    $('product-message').className = 'message error';
+  } finally {$('add-product').disabled = false;}
+});
+$('review-form').addEventListener('submit', async event => {
+  event.preventDefault();$('submit').disabled=true;$('message').className='message';$('message').textContent='';
+  showResult('loading');
+  try {
+    const selectedRating = document.querySelector('input[name="rating"]:checked');
     const result = await api('/api/reviews/analyze',{
       method:'POST',headers:{'Content-Type':'application/json','X-Demo-Token':$('token').value},
-      body:JSON.stringify({product_id:Number($('product').value),review_text:$('review').value,rating:$('rating').value ? Number($('rating').value) : null})
+      body:JSON.stringify({product_id:Number($('product').value),review_text:$('review').value,rating:selectedRating ? Number(selectedRating.value) : null})
     });
-    $('message').textContent=`Đã lưu: ${labels[result.sentiment]} · ${result.aspects.join(', ')}`;
-    $('message').className='message good';$('review').value='';await refresh();
-  } catch(err) {$('message').textContent=err.message;$('message').className='message error';await refresh().catch(()=>{});}
+    showResult('success', result);
+    $('review').value='';
+    if (selectedRating) selectedRating.checked = false;
+    updateRatingDisplay();
+    await refresh();
+  } catch(err) {showResult('error',err.message);await refresh().catch(()=>{});}
   finally {$('submit').disabled=false;}
 });
 boot();
