@@ -1,6 +1,6 @@
-# Customer Review Insights
+# Review Insights
 
-Ứng dụng phân tích đánh giá sản phẩm: người dùng chọn sản phẩm, nhập feedback và tùy chọn số sao; FastAPI gọi Gemini để xác định **cảm xúc**, **khía cạnh được nhắc đến** và **lý do ngắn**. Đánh giá cùng kết quả được lưu trong PostgreSQL trên Neon. Trang web hiển thị lịch sử và thống kê theo sản phẩm.
+Ứng dụng phân tích đánh giá sản phẩm: người dùng chọn hoặc thêm sản phẩm, nhập đánh giá và tùy chọn số sao; FastAPI gọi Gemini để xác định **cảm xúc**, **khía cạnh được nhắc đến** và **lý do ngắn**. Đánh giá cùng kết quả được lưu trong PostgreSQL trên Neon. Trang web hiển thị kết quả mới phân tích, lịch sử có bộ lọc và thống kê theo sản phẩm.
 
 ## 1. Cấu trúc project
 
@@ -53,7 +53,7 @@ Tạo `.env` từ `.env.example`:
 Copy-Item .env.example .env
 ```
 
-Trên macOS/Linux có thể dùng `cp .env.example .env`. Điền các giá trị thật **chỉ trong `.env` trên máy bạn**:
+Nếu dùng **Anaconda Prompt (CMD)**, chạy `copy .env.example .env`. Trên macOS/Linux, dùng `cp .env.example .env`. Điền các giá trị thật **chỉ trong `.env` trên máy bạn**:
 
 ```dotenv
 DATABASE_URL=postgresql+psycopg://USER:PASSWORD@HOST/DB?sslmode=require
@@ -62,7 +62,7 @@ GEMINI_MODEL=gemini-3.5-flash-lite
 DEMO_ACCESS_TOKEN=
 ```
 
-Trong Neon, lấy connection string tại trang **Connect**. Nếu Neon cung cấp URL bắt đầu bằng `postgresql://`, đổi riêng tiền tố thành `postgresql+psycopg://` để SQLAlchemy dùng driver `psycopg`; giữ nguyên host, user, password, database và các tham số URL còn lại. `DEMO_ACCESS_TOKEN` là tùy chọn ở local; nếu đặt một giá trị khác rỗng, giao diện phải gửi đúng mã khi phân tích. File `.env` phải được `.gitignore` bỏ qua; không commit key hay URL chứa mật khẩu.
+Trong Neon, lấy connection string tại trang **Connect**. Nếu Neon cung cấp URL bắt đầu bằng `postgresql://`, đổi riêng tiền tố thành `postgresql+psycopg://` để SQLAlchemy dùng driver `psycopg`; giữ nguyên host, user, password, database và các tham số URL còn lại. `DEMO_ACCESS_TOKEN` là tùy chọn ở local; nếu đặt một giá trị khác rỗng, giao diện phải gửi đúng mã khi phân tích đánh giá **và** thêm sản phẩm. File `.env` phải được `.gitignore` bỏ qua; không commit key hay URL chứa mật khẩu.
 
 > Model thực tế đã được nhóm thử thành công là `gemini-3.5-flash-lite`. Nếu `.env.example` trong repo còn ghi model cũ, hãy đồng bộ giá trị mẫu đó khi nhóm cập nhật cấu hình, rồi dùng tên model được API key cho phép.
 
@@ -72,7 +72,7 @@ Trong Neon, lấy connection string tại trang **Connect**. Nếu Neon cung c�
 python -m pytest -q
 ```
 
-Test dùng SQLite tạm và Gemini giả lập. Chúng **không ghi vào Neon và không cần API key thật**. Các test app kiểm tra HTML, tạo và lưu review, thống kê, validation, lỗi AI, demo token và nạp seed; test AI kiểm tra phản hồi hợp lệ, dữ liệu sai và lỗi dịch vụ. Số lượng test có thể thay đổi khi nhóm bổ sung ca kiểm thử; điều kiện đạt là toàn bộ test `passed`. Warning từ thư viện phụ thuộc không đồng nghĩa test thất bại.
+Test dùng SQLite tạm và Gemini giả lập. Chúng **không ghi vào Neon và không cần API key thật**. Các test app kiểm tra HTML, tạo sản phẩm, tên trùng, demo token, tạo và lưu review, thống kê, validation, lỗi AI và nạp seed; test AI kiểm tra phản hồi hợp lệ, dữ liệu sai và lỗi dịch vụ. Số lượng test có thể thay đổi khi nhóm bổ sung ca kiểm thử; điều kiện đạt là toàn bộ test `passed`. Warning từ thư viện phụ thuộc không đồng nghĩa test thất bại.
 
 ## 5. Nạp dữ liệu mẫu
 
@@ -82,13 +82,13 @@ python seed.py
 
 Theo dữ liệu backend của nhóm, lần chạy đầu tạo **3 sản phẩm và 24 đánh giá mẫu** (nếu Neon database đang trống). Đánh giá mới nạp có trạng thái `pending`, chưa có cảm xúc và khía cạnh. Chạy lại seed sẽ không tạo bản ghi trùng; tổng số thêm phụ thuộc dữ liệu đã có trước đó.
 
-Để tùy chọn phân tích tối đa hai đánh giá mẫu đang `pending` bằng Gemini thật:
+Để phân tích tối đa hai đánh giá đang `pending` bằng Gemini thật:
 
 ```powershell
 python seed.py --analyze 2
 ```
 
-Lệnh `--analyze` cần Gemini key/model hợp lệ và sẽ dùng lượt gọi API. Không bắt buộc chạy lệnh này: gửi một đánh giá mới trên giao diện cũng sẽ tạo kết quả phân tích.
+Lệnh `--analyze` chọn các review `pending` theo ID tăng dần, **không giới hạn riêng dữ liệu mẫu**. Lệnh cần Gemini key/model hợp lệ và sẽ dùng lượt gọi API. Review phân tích thành công được lưu với trạng thái `analyzed`; review phân tích lỗi chuyển thành `failed` và không được lệnh này tự thử lại. Không bắt buộc chạy lệnh này: gửi một đánh giá mới trên giao diện cũng sẽ tạo kết quả phân tích.
 
 ## 6. Chạy ứng dụng và thử trên trình duyệt
 
@@ -98,12 +98,13 @@ python -m uvicorn app:app --reload
 
 Mở [http://127.0.0.1:8000/](http://127.0.0.1:8000/). Kiểm tra [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health) trả `{"status":"ok","database":"ok"}`. Trong giao diện:
 
-1. Chọn sản phẩm có sẵn. Lịch sử và thống kê chỉ thuộc sản phẩm đang chọn.
-2. Nhập nội dung feedback, tùy chọn rating từ 1 đến 5; nhập demo token nếu đã cấu hình.
-3. Bấm **Phân tích và lưu**. Gemini phân tích nội dung feedback; rating được lưu nhưng hiện không đưa vào lời gọi AI.
-4. Xem cảm xúc, khía cạnh và giải thích trong lịch sử; tải lại trang để xác nhận dữ liệu vẫn có trong PostgreSQL.
+1. Chọn sản phẩm có sẵn hoặc bấm **+ Thêm sản phẩm** để tạo sản phẩm mới. Sản phẩm vừa tạo được chọn ngay; tên trùng sẽ bị từ chối.
+2. Nhập nội dung đánh giá và tùy chọn rating bằng 1–5 ngôi sao. Bấm **Bỏ chọn** để gửi đánh giá không có rating. Nhập mã truy cập demo nếu ứng dụng đã cấu hình mã; cùng mã này được dùng khi thêm sản phẩm.
+3. Bấm **Phân tích và lưu**. Gemini phân tích nội dung đánh giá; rating được lưu nhưng hiện không đưa vào lời gọi AI.
+4. Xem cảm xúc, các khía cạnh và giải thích trong thẻ **Kết quả vừa phân tích**. Thẻ này hiển thị kết quả của lần gửi mới nhất và không được khôi phục sau khi tải lại trang.
+5. Xem bảng **Lịch sử đánh giá** và thống kê của sản phẩm đang chọn. Bảng có các cột đánh giá, số sao, thời gian, cảm xúc, khía cạnh, trạng thái; có thể lọc theo cảm xúc và trạng thái. Tải lại trang để kiểm tra dữ liệu vẫn được lưu trong PostgreSQL.
 
-Giao diện hiện chưa có chức năng tạo sản phẩm. Sản phẩm được nạp từ CSV qua `seed.py` hoặc được tạo bởi người quản trị database. Lịch sử API hiện trả tối đa **100 đánh giá mới nhất của mỗi sản phẩm**.
+Giao diện lọc các đánh giá đã tải trong trình duyệt; API lịch sử hiện trả tối đa **100 đánh giá mới nhất của mỗi sản phẩm**, nên bộ lọc không tìm trong các đánh giá cũ hơn giới hạn này. Thống kê lấy từ toàn bộ review có `status="analyzed"` của sản phẩm trong PostgreSQL.
 
 ## 7. API
 
@@ -114,9 +115,18 @@ Tài liệu tương tác: [Swagger UI](http://127.0.0.1:8000/docs) và [ReDoc](h
 | `GET /` | Trang giao diện Review Insights | `200`, HTML |
 | `GET /health` | Kiểm tra kết nối DB | `200` với `database: ok`; `503` nếu DB không sẵn sàng |
 | `GET /api/products` | Danh sách sản phẩm | `200`, mảng `{id, name}` |
+| `POST /api/products` | Tạo sản phẩm mới | `201` với `{id, name}`; `409` nếu tên đã tồn tại |
 | `GET /api/products/{product_id}/reviews` | Lịch sử của một sản phẩm | `200`, tối đa 100 review; `404` nếu không có sản phẩm |
 | `GET /api/products/{product_id}/summary` | Đếm các nhãn đã phân tích | `200`, `total_analyzed` và các nhãn; `404` nếu không có sản phẩm |
 | `POST /api/reviews/analyze` | Gọi Gemini, lưu review và kết quả | `201` và review `analyzed`; `502` và review `failed` nếu AI lỗi |
+
+Ví dụ body của `POST /api/products`:
+
+```json
+{"name": "Bàn phím cơ"}
+```
+
+Tên chỉ gồm khoảng trắng hoặc dài hơn 120 ký tự trả `422`; tên trùng không phân biệt chữ hoa/chữ thường trả `409`.
 
 Ví dụ body của `POST /api/reviews/analyze`:
 
@@ -128,7 +138,7 @@ Ví dụ body của `POST /api/reviews/analyze`:
 }
 ```
 
-`rating` có thể là `null`. Nội dung chỉ gồm khoảng trắng hoặc rating ngoài 1–5 trả `422`; sản phẩm không tồn tại trả `404`. Nếu đã đặt `DEMO_ACCESS_TOKEN` trong môi trường, request cần header `X-Demo-Token` tương ứng; sai hoặc thiếu mã trả `403` và không lưu review. Khi AI thất bại, app đã lưu review rồi nên lịch sử có thể hiển thị trạng thái `failed`.
+`rating` có thể là `null`. Nội dung chỉ gồm khoảng trắng hoặc rating ngoài 1–5 trả `422`; sản phẩm không tồn tại trả `404`. Nếu đã đặt `DEMO_ACCESS_TOKEN` trong môi trường, **cả hai POST endpoint** cần header `X-Demo-Token` tương ứng; sai hoặc thiếu mã trả `403` và không lưu dữ liệu. Khi AI thất bại, app đã lưu review rồi nên lịch sử có thể hiển thị trạng thái `failed`.
 
 ## 8. Database và bàn giao
 
