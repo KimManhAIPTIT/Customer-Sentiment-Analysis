@@ -7,3 +7,7 @@ __pycache__/
 *.sqlite3
 
 .idea/
+.neon
+node_modules/
+.env.*
+!.env.example
