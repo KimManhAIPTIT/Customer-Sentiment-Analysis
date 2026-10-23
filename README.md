@@ -106,7 +106,21 @@ Mở [http://127.0.0.1:8000/](http://127.0.0.1:8000/). Kiểm tra [http://127.0.
 
 Giao diện lọc các đánh giá đã tải trong trình duyệt; API lịch sử hiện trả tối đa **100 đánh giá mới nhất của mỗi sản phẩm**, nên bộ lọc không tìm trong các đánh giá cũ hơn giới hạn này. Thống kê lấy từ toàn bộ review có `status="analyzed"` của sản phẩm trong PostgreSQL.
 
-## 7. API
+## 7. Chạy bằng Docker
+
+Image public: https://hub.docker.com/r/khanhptit09/sentiment-app
+
+```bash
+# Dùng image có sẵn trên Docker Hub
+docker run --rm -p 8000:8000 --env-file .env khanhptit09/sentiment-app:latest
+
+# Hoặc tự build và chạy bằng docker compose
+docker compose up --build
+```
+
+Mở `http://localhost:8000`; container báo `(healthy)` khi `/health` trả về 200. Chi tiết xem `DOCKER_SETUP_GUIDE.md`.
+
+## 8. API
 
 Tài liệu tương tác: [Swagger UI](http://127.0.0.1:8000/docs) và [ReDoc](http://127.0.0.1:8000/redoc). Thay `{product_id}` bằng ID số thực tế lấy từ `GET /api/products`.
 
@@ -140,7 +154,7 @@ Ví dụ body của `POST /api/reviews/analyze`:
 
 `rating` có thể là `null`. Nội dung chỉ gồm khoảng trắng hoặc rating ngoài 1–5 trả `422`; sản phẩm không tồn tại trả `404`. Nếu đã đặt `DEMO_ACCESS_TOKEN` trong môi trường, **cả hai POST endpoint** cần header `X-Demo-Token` tương ứng; sai hoặc thiếu mã trả `403` và không lưu dữ liệu. Khi AI thất bại, app đã lưu review rồi nên lịch sử có thể hiển thị trạng thái `failed`.
 
-## 8. Database và bàn giao
+## 9. Database và bàn giao
 
 - `products`: `id`, `name` (tên duy nhất).
 - `reviews`: `product_id`, `review_text`, `rating`, `source`, `sentiment`, `aspects`, `reason`, `status`, `created_at`, `analyzed_at`.
