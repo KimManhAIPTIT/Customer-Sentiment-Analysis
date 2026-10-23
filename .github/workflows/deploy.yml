@@ -32,6 +32,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      # Tên image trên Docker Hub phải viết thường
+      - name: Set image name
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        run: echo "IMAGE=$(echo "${DOCKER_USERNAME:-local}" | tr '[:upper:]' '[:lower:]')/sentiment-app" >> "$GITHUB_ENV"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -49,5 +55,5 @@ jobs:
           context: .
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           tags: |
-            ${{ secrets.DOCKER_USERNAME || 'local' }}/sentiment-app:latest
-            ${{ secrets.DOCKER_USERNAME || 'local' }}/sentiment-app:${{ github.sha }}
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ github.sha }}
