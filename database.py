@@ -41,17 +41,37 @@ class Review(Base):
     analyzed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+def _database_url(name: str) -> str:
+    # `neon env pull` ghi URL trong dấu nháy và dạng postgresql://; docker --env-file giữ nguyên dấu nháy.
+    url = os.getenv(name, "").strip().strip("\"'")
+    for prefix in ("postgresql://", "postgres://"):
+        if url.startswith(prefix):
+            return "postgresql+psycopg://" + url[len(prefix):]
+    return url
+
+
 @lru_cache(maxsize=1)
 def get_engine():
-    url = os.getenv("DATABASE_URL", "").strip()
-    if not url or "YOUR-NEON-HOST" in url:
+    # DATABASE_URL của Neon là kết nối pooled (-pooler), phù hợp cho truy vấn của app.
+    url = _database_url("DATABASE_URL")
+    if not url or "YOUR-NEON-HOST" in url or "ep-sample" in url:
         raise RuntimeError("Chưa cấu hình DATABASE_URL trong .env")
     return create_engine(url, pool_pre_ping=True)
 
 
 def init_db() -> None:
     # Phù hợp bản demo khởi tạo lần đầu; schema thay đổi về sau cần migration.
-    Base.metadata.create_all(get_engine())
+    # Với Postgres, DDL chạy qua kết nối trực tiếp (DATABASE_URL_UNPOOLED) nếu có, theo khuyến nghị của Neon.
+    engine = get_engine()
+    direct_url = _database_url("DATABASE_URL_UNPOOLED")
+    if engine.dialect.name != "postgresql" or not direct_url:
+        Base.metadata.create_all(engine)
+        return
+    direct_engine = create_engine(direct_url, pool_pre_ping=True)
+    try:
+        Base.metadata.create_all(direct_engine)
+    finally:
+        direct_engine.dispose()
 
 
 def get_db() -> Generator[Session, None, None]:
