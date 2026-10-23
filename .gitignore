@@ -1,11 +1,9 @@
-# File bảo mật môi trường
 .env
-
-# Thư mục ảo Python & cache
-venv/
-env/
+.venv/
 __pycache__/
 *.pyc
+.pytest_cache/
+*.db
+*.sqlite3
 
-# File rác hệ điều hành
-.DS_Store
+.idea/
