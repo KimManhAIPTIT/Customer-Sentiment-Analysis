@@ -12,3 +12,9 @@ venv
 tests
 khoitao.md
 DOCKER_SETUP_GUIDE.md
+node_modules
+neon.ts
+.neon
+package.json
+package-lock.json
+.env.*
