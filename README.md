@@ -179,5 +179,8 @@ Các biến môi trường được cấu hình trên Render:
 `PORT`, `DATABASE_URL`, `GEMINI_API_KEY`, `GEMINI_MODEL`,
 `DEMO_ACCESS_TOKEN`.
 
-Triển khai lần đầu đã thành công. Bước tự động deploy từ
-GitHub Actions đang được bổ sung.
+Đã triển khai CI/CD bằng GitHub Actions:
+Test → Build và push Docker Hub → Deploy Render → Kiểm tra HTTPS.
+
+Pipeline triển khai đúng commit trên main, chờ Render báo Live
+và kiểm tra trang chủ, kết nối database cùng API sản phẩm.
