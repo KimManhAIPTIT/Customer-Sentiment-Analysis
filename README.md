@@ -162,3 +162,22 @@ Ví dụ body của `POST /api/reviews/analyze`:
 - `init_db()` dùng `create_all()` để tạo các bảng còn thiếu lần đầu; khi thay schema đã triển khai cần migration riêng.
 
 Phiên bản README này mô tả phần ứng dụng AI/frontend và backend/database đã ghép trên nhánh `feature/ai-frontend`. Các thành viên phụ trách Docker, GitHub Actions và triển khai sẽ bổ sung hướng dẫn build image, pipeline và URL HTTPS sau khi PR ứng dụng được gộp vào `main`.
+
+## Triển khai Cloud trên Render
+
+- Demo HTTPS: https://customer-sentiment-analysis-1-7rd5.onrender.com
+- Nền tảng: Render, chạy ứng dụng FastAPI bằng Docker.
+- Database: PostgreSQL trên Neon.
+- AI: Gemini API.
+- Health check: `/health`.
+- Cổng ứng dụng: `8000`.
+
+Đã kiểm tra thêm sản phẩm, phân tích đánh giá bằng Gemini
+và hiển thị kết quả trong lịch sử.
+
+Các biến môi trường được cấu hình trên Render:
+`PORT`, `DATABASE_URL`, `GEMINI_API_KEY`, `GEMINI_MODEL`,
+`DEMO_ACCESS_TOKEN`.
+
+Triển khai lần đầu đã thành công. Bước tự động deploy từ
+GitHub Actions đang được bổ sung.
