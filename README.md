@@ -165,7 +165,7 @@ Phiên bản README này mô tả phần ứng dụng AI/frontend và backend/da
 
 ## Triển khai Cloud trên Render
 
-- Demo HTTPS: https://customer-sentiment-analysis-1-7rd5.onrender.com
+- Demo HTTPS: https://customer-sentiment-analysis-1-7rd5.onrender.com](https://sentiment-app-latest-ysqe.onrender.com
 - Nền tảng: Render, chạy ứng dụng FastAPI bằng Docker.
 - Database: PostgreSQL trên Neon.
 - AI: Gemini API.
@@ -182,5 +182,5 @@ Các biến môi trường được cấu hình trên Render:
 Đã triển khai CI/CD bằng GitHub Actions:
 Test → Build và push Docker Hub → Deploy Render → Kiểm tra HTTPS.
 
-Pipeline triển khai đúng commit trên main, chờ Render báo Live
-và kiểm tra trang chủ, kết nối database cùng API sản phẩm.
+Pipeline build và push Docker image có tag theo commit SHA lên Docker Hub.
+Render pull image tương ứng, chờ trạng thái Live và kiểm tra HTTPS.
