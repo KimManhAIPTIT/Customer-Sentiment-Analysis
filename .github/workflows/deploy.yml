@@ -83,7 +83,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Deploy exact commit, wait for live and check HTTPS
+      - name: Deploy Docker Hub image, wait for live and check HTTPS
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
