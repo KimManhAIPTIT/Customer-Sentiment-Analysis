@@ -315,7 +315,8 @@ async function refresh() {
   if (total) {
     const [topKey, topCount] = Object.entries(summary.sentiments)
       .reduce((best, entry) => entry[1] > best[1] ? entry : best);
-    $('insight-text').textContent = `Cảm xúc ${labels[topKey].toLowerCase()} xuất hiện nhiều nhất: ${topCount}/${total} đánh giá.`;
+    const productName = $('product').selectedOptions[0].textContent;
+    $('insight-text').textContent = `${productName}: cảm xúc ${labels[topKey].toLowerCase()} xuất hiện nhiều nhất: ${topCount}/${total} đánh giá.`;
   } else {
     $('insight-text').textContent = 'Chưa có đánh giá được phân tích cho sản phẩm này.';
   }
