@@ -313,11 +313,12 @@ async function refresh() {
     $('distribution').append(segment);
   }
   if (total) {
-    const [topKey, topCount] = Object.entries(summary.sentiments)
-      .reduce((best, entry) => entry[1] > best[1] ? entry : best);
-    $('insight-text').textContent = `Cảm xúc ${labels[topKey].toLowerCase()} xuất hiện nhiều nhất: ${topCount}/${total} đánh giá.`;
+      const [topKey, topCount] = Object.entries(summary.sentiments)
+        .reduce((best, entry) => entry[1] > best[1] ? entry : best);
+      const topPercent = Math.round(100 * topCount / total);
+      $('insight-text').textContent = `Cảm xúc ${labels[topKey].toLowerCase()} xuất hiện nhiều nhất: ${topCount}/${total} đánh giá (${topPercent}%).`;
   } else {
-    $('insight-text').textContent = 'Chưa có đánh giá được phân tích cho sản phẩm này.';
+      $('insight-text').textContent = 'Chưa có đánh giá được phân tích cho sản phẩm này.';
   }
   currentReviews = reviews;
   renderReviews();
