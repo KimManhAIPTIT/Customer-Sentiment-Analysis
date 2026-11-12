@@ -319,7 +319,7 @@ async function refresh() {
       const topPercent = Math.round(100 * topCount / total);
       $('insight-text').textContent = `${productName}: cảm xúc ${labels[topKey].toLowerCase()} xuất hiện nhiều nhất: ${topCount}/${total} đánh giá (${topPercent}%).`;
   } else {
-    $('insight-text').textContent = 'Chưa có đánh giá được phân tích cho sản phẩm này.';
+      $('insight-text').textContent = 'Chưa có đánh giá được phân tích cho sản phẩm này.';
   }
   currentReviews = reviews;
   renderReviews();
