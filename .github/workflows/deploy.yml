@@ -68,6 +68,8 @@ jobs:
           tags: |
             ${{ env.IMAGE }}:latest
             ${{ env.IMAGE }}:${{ github.sha }}
+          cache-from: type=gha,version=2,scope=sentiment-app
+          cache-to: type=gha,version=2,scope=sentiment-app,mode=max
 
   deploy:
     needs: build-and-push
