@@ -118,7 +118,7 @@ def reviews(product_id: int, db: Session = Depends(get_db)):
 @app.get("/api/products/{product_id}/summary")
 def summary(product_id: int, db: Session = Depends(get_db)):
     if not db.get(Product, product_id):
-        raise HTTPException(status_code=404, detail="Không tìm thấy sản phẩm")
+        raise HTTPException(status_code=404, detail="Không tìm thấy")
     counts = {label: 0 for label in ("positive", "neutral", "negative", "mixed")}
     rows = db.execute(
         select(Review.sentiment, func.count(Review.id))
